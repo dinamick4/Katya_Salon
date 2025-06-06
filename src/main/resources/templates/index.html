@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Календарь записей пациентов</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+
+
+</head>
+
+<body>
+<h1>Календарь рекомендаций клиентов</h1>
+
+<!-- Выводим сообщение об успехе удаления -->
+<p th:if="${message != null}" style="color: green; font-weight: bold; text-align: center;" th:text="${message}"></p>
+
+<!-- Форма добавления новой записи -->
+<div>
+    <form action="/add" method="post">
+        Телефон:<br/>
+        <input type="tel" id="telephone" name="telephone"  required
+               pattern="^[8]\d{10}$"
+               title="Номер телефона должен быть указан в формате 8XXXXXXXXXX"
+               placeholder="8XXXXXXXXXX" />
+
+        Дата визита (формат yyyy-MM-dd):<br/>
+        <input type="date" id=appointmentDate name="appointmentDate" required /><br/><br/>
+
+        Рекомендации:<br/>
+        <textarea id="recommend" name="recommend" rows="5" cols="50" required></textarea><br/><br/>
+        <button class="button" type="submit">Добавить запись</button>
+    </form>
+</div>
+
+<div>
+    <form action="/getRecord" method="get">
+        Телефон:<br/>
+        <input type="tel" id="telephone" name="telephone"  required
+               pattern="^[8]\d{10}$"
+               title="Номер телефона должен быть указан в формате 8XXXXXXXXXX"
+               placeholder="8XXXXXXXXXX" />
+        <button class="button" type="submit">Поиск записей</button>
+    </form>
+</div>
+
+<!-- Новая кнопка для получения ВСЕХ записей -->
+<div>
+    <form action="/allRecords" method="get">
+        <button class="button" type="submit">Получить все записи</button>
+    </form>
+</div>
+
+<!-- Таблица текущих записей (результатов поиска) -->
+<div>
+    <p th:if="${searchPerformed != null && searchPerformed && #lists.isEmpty(appointments)}" style="color: red;">Записи не найдены.</p>
+
+    <div th:if="${not #lists.isEmpty(appointments)}">
+        <h2 style="text-align:center;">Найденные записи:</h2>
+        <table border="1">
+            <tr>
+                <th>Дата приема</th>
+                <th>Телефон</th>
+                <th>Рекомендации</th>
+                <th>Действия</th>
+            </tr>
+            <!-- Цикл для вывода каждой записи -->
+            <tr th:each="appointment : ${appointments}">
+                <td th:text="${#temporals.format(appointment.appointmentDate, 'dd/MM/yyyy')}"></td>
+                <td th:text="${appointment.telephone}"></td>
+                <td class="recommendations-cell" th:text="${appointment.recommend}"></td>
+                <td>
+                    <a th:href="@{'/edit/' + ${appointment.id}}" class="btn-edit">Редактировать</a>
+
+                    <!-- Новая форма для отправки POST-запроса -->
+                    <form th:action="@{'/delete/' + ${appointment.id}}" method="post">
+                        <button type="submit" class="btn-delete">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>

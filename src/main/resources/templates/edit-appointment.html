@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактирование записи</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+</head>
+
+<body>
+<h1>Редактирование записи</h1>
+
+<p th:if="${message != null}" style="color: green; font-weight: bold; text-align: center;" th:text="${message}"></p>
+
+
+<div>
+    <form action="/update" method="post">
+        <input type="hidden" id="id" name="id" th:value="${appointment.id}" />
+        Телефон:<br/>
+        <input type="tel" id="telephone" name="telephone" required
+               th:value="${appointment.telephone}"
+               pattern="^[8]\d{10}$"
+               title="Номер телефона должен быть указан в формате 8XXXXXXXXXX"
+               placeholder="8XXXXXXXXXX" />
+
+        Дата визита (формат yyyy-MM-dd):<br/>
+        <input type="date" id="appointmentDate" name="appointmentDate" required th:value="${#temporals.format(appointment.appointmentDate, 'yyyy-MM-dd')}" /><br/><br/>
+
+        Рекомендации:<br/>
+        <textarea id="recommend" name="recommend" rows="5" cols="50" required th:text="${appointment.recommend}"> </textarea><br/><br/>
+
+        <button class="button" type="submit">Сохранить изменения</button>
+    </form>
+</div>
+
+<a href="/"><button class="button">Вернуться назад</button></a>
+
+</body>
+</html>
