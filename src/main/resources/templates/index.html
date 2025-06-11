@@ -4,35 +4,24 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Календарь записей пациентов</title>
-    <link rel="stylesheet" href="/css/styles.css" />
-
+    <link rel="stylesheet" href="/css/styles.css"/>
 
 </head>
 
 <body>
 <h1>Календарь рекомендаций клиентов</h1>
 
-<!-- Выводим сообщение об успехе удаления -->
+<!-- Выводим сообщение на главную страницу -->
 <p th:if="${message != null}" style="color: green; font-weight: bold; text-align: center;" th:text="${message}"></p>
 
-<!-- Форма добавления новой записи -->
+<!-- кнопка для добавления новой записи -->
 <div>
-    <form action="/add" method="post">
-        Телефон:<br/>
-        <input type="tel" id="telephone" name="telephone"  required
-               pattern="^[8]\d{10}$"
-               title="Номер телефона должен быть указан в формате 8XXXXXXXXXX"
-               placeholder="8XXXXXXXXXX" />
-
-        Дата визита (формат yyyy-MM-dd):<br/>
-        <input type="date" id=appointmentDate name="appointmentDate" required /><br/><br/>
-
-        Рекомендации:<br/>
-        <textarea id="recommend" name="recommend" rows="5" cols="50" required></textarea><br/><br/>
-        <button class="button" type="submit">Добавить запись</button>
+    <form action="/addRecord" method="get">
+        <button class="button" type="submit">Добавление новой записи</button>
     </form>
 </div>
 
+<!-- кнопка для получения записи по номеру телефона -->
 <div>
     <form action="/getRecord" method="get">
         Телефон:<br/>
@@ -44,7 +33,7 @@
     </form>
 </div>
 
-<!-- Новая кнопка для получения ВСЕХ записей -->
+<!-- кнопка для получения ВСЕХ записей -->
 <div>
     <form action="/allRecords" method="get">
         <button class="button" type="submit">Получить все записи</button>
@@ -53,8 +42,6 @@
 
 <!-- Таблица текущих записей (результатов поиска) -->
 <div>
-    <p th:if="${searchPerformed != null && searchPerformed && #lists.isEmpty(appointments)}" style="color: red;">Записи не найдены.</p>
-
     <div th:if="${not #lists.isEmpty(appointments)}">
         <h2 style="text-align:center;">Найденные записи:</h2>
         <table border="1">
@@ -62,6 +49,7 @@
                 <th>Дата приема</th>
                 <th>Телефон</th>
                 <th>Рекомендации</th>
+                <th>Фотография</th>
                 <th>Действия</th>
             </tr>
             <!-- Цикл для вывода каждой записи -->
@@ -70,17 +58,23 @@
                 <td th:text="${appointment.telephone}"></td>
                 <td class="recommendations-cell" th:text="${appointment.recommend}"></td>
                 <td>
-                    <a th:href="@{'/edit/' + ${appointment.id}}" class="btn-edit">Редактировать</a>
+                    <div th:each="photo : ${appointment.photos}">
+<!--                        выводим изображения типа PNG ('iVBOR'), JPEG ('/9j/'), остальные варианты (предполагается, что это GIF или любой другой формат)-->
+                        <img th:src="|data:image/${#strings.contains(photo, 'iVBOR') ? 'png' : #strings.contains(photo, '/9j/') ? 'jpeg' : 'gif'};base64,${photo}|"
+                             style="max-width: 100px; max-height: 100px;" />
+                    </div>
+                </td>
+                <td>
+                    <a th:href="@{'/edit/' + ${appointment.id}}" class="btn-edit">Редактировать запись</a>
 
                     <!-- Новая форма для отправки POST-запроса -->
                     <form th:action="@{'/delete/' + ${appointment.id}}" method="post">
-                        <button type="submit" class="btn-delete">Удалить</button>
+                        <button type="submit" class="btn-delete">Удалить запись</button>
                     </form>
                 </td>
             </tr>
         </table>
     </div>
 </div>
-
 </body>
 </html>

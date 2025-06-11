@@ -3,47 +3,41 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Редактирование записи</title>
-    <link rel="stylesheet" href="/css/styles.css" />
+    <title>Добавление записи</title>
+    <link rel="stylesheet" href="/css/styles.css"/>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 </head>
 
 <body>
-<h1>Редактирование записи</h1>
+<h1>Добавление записи</h1>
 
 <p th:if="${message != null}" style="color: green; font-weight: bold; text-align: center;" th:text="${message}"></p>
 
+
+<!-- Форма добавления новой записи -->
 <div>
-    <form action="/update" method="post" enctype="multipart/form-data">
-        <input type="hidden" id="id" name="id" th:value="${appointment.id}" />
+    <form action="/add" method="post" enctype="multipart/form-data" id="uploadForm">
+
         Телефон:<br/>
-        <input type="tel" id="telephone" name="telephone" required
-               th:value="${appointment.telephone}"
+        <input type="tel" id="telephone" name="telephone"  required
                pattern="^[8]\d{10}$"
                title="Номер телефона должен быть указан в формате 8XXXXXXXXXX"
                placeholder="8XXXXXXXXXX" />
 
         Дата визита (формат yyyy-MM-dd):<br/>
-        <input type="date" id="appointmentDate" name="appointmentDate" required th:value="${#temporals.format(appointment.appointmentDate, 'yyyy-MM-dd')}" /><br/><br/>
+        <input type="date" id=appointmentDate name="appointmentDate" required /><br/><br/>
 
         Рекомендации:<br/>
-        <textarea id="recommend" name="recommend" rows="5" cols="50" required th:text="${appointment.recommend}"> </textarea><br/><br/>
+        <textarea id="recommend" name="recommend" rows="5" cols="50" required></textarea><br/><br/>
 
-        <!-- Отображаем список загруженных фотографий -->
-        <h3>Фотографии клиента:</h3>
-        <ul th:if="${!appointment.photos.empty}" class="photo-list">
-            <li th:each="photo : ${appointment.photos}" th:varStatus="stat">
-                <img th:src="|data:image/${#strings.contains(photo, 'iVBOR') ? 'png' : #strings.contains(photo, '/9j/') ? 'jpeg' : 'gif'};base64,${photo}|" style="max-width: 100px; max-height: 100px;" alt="Фото клиента" />
-                <label for="delete-${stat.index}">Удалить?</label>
-                <input type="checkbox" name="deletedPhotos" th:value="${photo}" id="delete-${stat.index}" />
-            </li>
-        </ul>
+        Фото клиента:<br/>
+        <input type="file" multiple id="clientPhotos" name="clientPhotos" accept="image/*"/><br/><br/>
 
-        <!-- Загрузка новых фотографий -->
-        <h3>Загрузить новые фотографии:</h3>
-        <input type="file" multiple id="clientPhotos" name="clientPhotos" accept="image/*"/>
+        <!-- Скрытый контейнер для хранения выбранных файлов -->
+        <input type="hidden" id="previousFiles" name="previousFiles" value="" />
 
-        <button class="button" type="submit">Сохранить изменения</button>
+        <button class="button" type="submit">Добавить запись</button>
     </form>
 </div>
 
@@ -88,6 +82,7 @@
             .catch(error => alert('Возникла ошибка при обработке формы.'));
     });
 </script>
+
 
 <a href="/"><button class="button">Вернуться назад</button></a>
 
