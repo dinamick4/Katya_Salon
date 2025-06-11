@@ -4,7 +4,64 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Редактирование записи</title>
-    <link rel="stylesheet" href="/css/styles.css" />
+    <link rel="stylesheet" href="/css/styles.css"/>
+    <style>
+        /* Стили для модального окна */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7); /* Прозрачность фона */
+        }
+
+        .modal.active {
+            display: block;
+        }
+
+        /* Контент модального окна */
+        .modal-content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: transparent;
+        }
+
+        /* Основное изображение */
+        .fullscreen-img {
+            max-width: 100%;
+            max-height: 100vh; /* Чтобы изображение занимало максимум высоты экрана */
+            object-fit: cover; /* Пропорционально масштабирует изображение */
+            user-select: none;
+        }
+
+        /* Кнопка закрытия */
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: white;
+            background-color: black;
+            opacity: 0.7;
+            border: none;
+            outline: none;
+            padding: 0.5em 1em;
+            cursor: pointer;
+            transition: opacity 0.2s ease-in-out;
+            z-index: 1001; /* помещаем её над фоном */
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+    </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
@@ -33,7 +90,8 @@
         <h3>Фотографии клиента:</h3>
         <ul th:if="${!appointment.photos.empty}" class="photo-list">
             <li th:each="photo : ${appointment.photos}" th:varStatus="stat">
-                <img th:src="|data:image/${#strings.contains(photo, 'iVBOR') ? 'png' : #strings.contains(photo, '/9j/') ? 'jpeg' : 'gif'};base64,${photo}|" style="max-width: 100px; max-height: 100px;" alt="Фото клиента" />
+                <img th:src="|data:image/${#strings.contains(photo, 'iVBOR') ? 'png' : #strings.contains(photo, '/9j/') ? 'jpeg' : 'gif'};base64,${photo}|" style="max-width: 100px; max-height: 100px; cursor: pointer;"
+                     onclick="showFullScreen(this.src)" alt="Фото клиента" />
                 <label for="delete-${stat.index}">Удалить?</label>
                 <input type="checkbox" name="deletedPhotos" th:value="${photo}" id="delete-${stat.index}" />
             </li>
@@ -47,45 +105,44 @@
     </form>
 </div>
 
+<!-- Всплывающее окно для полностраничного просмотра изображения -->
+<div id="fullscreen-modal" class="modal">
+    <span class="close-btn" onclick="hideFullScreen()">×</span>
+    <div class="modal-content">
+        <img id="fullscreen-img" class="fullscreen-img" onclick="hideFullScreen()" />
+    </div>
+</div>
+
 <script>
-    // Массив для хранения всех выбранных файлов
-    let allSelectedFiles = [];
+    // Показать изображение на полный экран
+    function showFullScreen(src) {
+        const modal = document.getElementById('fullscreen-modal');
+        const fullscreenImg = document.getElementById('fullscreen-img');
 
-    // Обработчик выбора файлов
-    document.getElementById('clientPhotos').addEventListener('change', function(e) {
-        e.preventDefault(); // предотвращаем сброс браузера
-        const currentFiles = this.files; // Получаем текущие выбранные файлы
-        allSelectedFiles.push(...currentFiles); // Добавляем их в основной массив
-    });
+        fullscreenImg.src = src;
+        modal.classList.add('active');  // Включаем модальное окно
+    }
 
-    // Обработчик отправки формы
-    document.getElementById('uploadForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // блокируем обычную отправку формы
+    // Скрыть изображение
+    function hideFullScreen() {
+        const modal = document.getElementById('fullscreen-modal');
+        modal.classList.remove('active');  // Выключаем модальное окно
+    }
 
-        const formData = new FormData();
+    // Кнопка закрытия окна
+    const closeButton = document.querySelector('.close-btn');
+    if (closeButton) {
+        closeButton.addEventListener('click', hideFullScreen);
+    }
 
-        // Добавляем файлы в объект FormData ТОЛЬКО ЕСЛИ ЕСТЬ ФАЙЛЫ
-        if(allSelectedFiles.length > 0){
-            allSelectedFiles.forEach((file, idx) => {
-                formData.append('clientPhotos', file); // добавляем файл в форму
-            });
+    // Закрытие окна при нажатии на изображение
+    document.getElementById('fullscreen-img').addEventListener('click', hideFullScreen);
+
+    // Закрытие окна по клавише Escape
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') {
+            hideFullScreen();
         }
-
-        // Добавляем остальные поля формы
-        formData.append("telephone", document.getElementById('telephone').value);
-        formData.append("appointmentDate", document.getElementById('appointmentDate').value);
-        formData.append("recommend", document.getElementById('recommend').value);
-
-        // Отправляем данные формы
-        fetch('/add', {method: 'POST', body: formData})
-            .then(response => response.json())
-            .then(data => {
-                if (data.message) {
-                    alert(data.message); // Сообщение сразу показываем
-                }
-                window.location.href = '/'; // Переходим на главную страницу
-            })
-            .catch(error => alert('Возникла ошибка при обработке формы.'));
     });
 </script>
 

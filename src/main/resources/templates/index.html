@@ -4,7 +4,67 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Календарь записей пациентов</title>
-    <link rel="stylesheet" href="/css/styles.css"/>
+    <style>
+        /* Стили для модального окна */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7); /* Прозрачность фона */
+        }
+
+        .modal.active {
+            display: flex; /* Применяем Flexbox для модального окна */
+            justify-content: center; /* Горизонтальная централизация */
+            align-items: center; /* Вертикальная централизация */
+        }
+
+        /* Контент модального окна */
+        .modal-content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: transparent;
+        }
+
+        /* Основное изображение */
+        .fullscreen-img {
+            max-width: 100vw; /* Ограничиваем максимальную ширину на 90% от ширины экрана */
+            max-height: 100vh; /* Ограничиваем максимальную высоту на 90% от высоты экрана */
+            object-fit: cover; /* Масштабируем изображение с сохранением пропорций */
+            user-select: none;
+        }
+
+        /* Кнопка закрытия */
+        .close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            color: white;
+            background-color: black;
+            opacity: 0.7;
+            border: none;
+            outline: none;
+            padding: 0.5em 1em;
+            cursor: pointer;
+            transition: opacity 0.2s ease-in-out;
+            z-index: 1001; /* Помещаем её над фоном */
+        }
+
+        .close-btn:hover {
+            opacity: 1;
+        }
+    </style>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 </head>
 
@@ -58,10 +118,9 @@
                 <td th:text="${appointment.telephone}"></td>
                 <td class="recommendations-cell" th:text="${appointment.recommend}"></td>
                 <td>
-                    <div th:each="photo : ${appointment.photos}">
-<!--                        выводим изображения типа PNG ('iVBOR'), JPEG ('/9j/'), остальные варианты (предполагается, что это GIF или любой другой формат)-->
-                        <img th:src="|data:image/${#strings.contains(photo, 'iVBOR') ? 'png' : #strings.contains(photo, '/9j/') ? 'jpeg' : 'gif'};base64,${photo}|"
-                             style="max-width: 100px; max-height: 100px;" />
+                    <div th:each="photo : ${appointment.photos}" class="photos">
+                        <img th:id="'img-' + ${appointment.id}" th:class="'thumb'" th:src="|data:image/${#strings.contains(photo, 'iVBOR') ? 'png' : #strings.contains(photo, '/9j/') ? 'jpeg' : 'gif'};base64,${photo}|"
+                             style="max-width: 100px; max-height: 100px; cursor: pointer;" />
                     </div>
                 </td>
                 <td>
@@ -76,5 +135,27 @@
         </table>
     </div>
 </div>
+
+<div id="image-modal" class="modal">
+    <span class="close-btn">×</span>
+    <img id="expanded-image" class="fullscreen-img" />
+</div>
+
+<script>
+    $(document).ready(function(){
+        $(".thumb").on("click", function(e){
+            e.preventDefault();
+            const imgSrc = $(this).attr("src"); // Получаем источник изображения
+            $("#expanded-image").attr("src", imgSrc); // Меняем изображение в модальном окне
+            $("#image-modal").addClass("active"); // Активируем модальное окно
+        });
+
+        // Закрываем модальное окно при клике на изображение или кнопку
+        $("#expanded-image, .close-btn").on("click", function(){
+            $("#image-modal").removeClass("active");
+        });
+    });
+</script>
+
 </body>
 </html>
