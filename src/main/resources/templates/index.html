@@ -19,35 +19,52 @@
         }
 
         .modal.active {
-            display: flex; /* Применяем Flexbox для модального окна */
-            justify-content: center; /* Горизонтальная централизация */
-            align-items: center; /* Вертикальная централизация */
+            display: block; /* Показываем модальное окно */
         }
 
         /* Контент модального окна */
         .modal-content {
-            position: relative;
+            margin: 15% auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,.3);
+            width: 80%; /* Ширина модального окна */
+            max-width: 600px; /* Максимальная ширина */
+        }
+
+        /* Окно с изображением */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
             width: 100%;
             height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7); /* Прозрачность фона */
+        }
+
+        .image-modal.active {
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: transparent;
         }
 
-        /* Основное изображение */
+        /* Картинка в модальном окне */
         .fullscreen-img {
-            max-width: 100vw; /* Ограничиваем максимальную ширину на 90% от ширины экрана */
-            max-height: 100vh; /* Ограничиваем максимальную высоту на 90% от высоты экрана */
-            object-fit: cover; /* Масштабируем изображение с сохранением пропорций */
+            max-width: 90vw; /* Максимум 90% ширины экрана */
+            max-height: 90vh; /* Максимум 90% высоты экрана */
+            object-fit: contain; /* Сохраняем пропорции изображения */
             user-select: none;
         }
 
         /* Кнопка закрытия */
         .close-btn {
             position: absolute;
-            top: 1rem;
-            right: 1rem;
+            top: 10px;
+            right: 10px;
             color: white;
             background-color: black;
             opacity: 0.7;
@@ -65,7 +82,6 @@
     </style>
     <link rel="stylesheet" href="/css/styles.css" />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
 </head>
 
 <body>
@@ -113,14 +129,20 @@
                 <th>Действия</th>
             </tr>
             <!-- Цикл для вывода каждой записи -->
-            <tr th:each="appointment : ${appointments}">
+            <tr th:each="appointment : ${appointments}"
+                onclick="showModal(this)"
+                style="cursor:pointer;"
+            >
                 <td th:text="${#temporals.format(appointment.appointmentDate, 'dd/MM/yyyy')}"></td>
                 <td th:text="${appointment.telephone}"></td>
                 <td class="recommendations-cell" th:text="${appointment.recommend}"></td>
                 <td>
                     <div th:each="photo : ${appointment.photos}" class="photos">
-                        <img th:id="'img-' + ${appointment.id}" th:class="'thumb'" th:src="|data:image/${#strings.contains(photo, 'iVBOR') ? 'png' : #strings.contains(photo, '/9j/') ? 'jpeg' : 'gif'};base64,${photo}|"
-                             style="max-width: 100px; max-height: 100px; cursor: pointer;" />
+                        <img th:id="'img-' + ${appointment.id}" th:class="'thumb'"
+                             th:src="|data:image/${#strings.contains(photo, 'iVBOR') ? 'png' : #strings.contains(photo, '/9j/') ? 'jpeg' : 'gif'};base64,${photo}|"
+                             style="max-width: 100px; max-height: 100px; cursor: pointer;"
+                             onclick="event.stopPropagation(); openImage(event)"
+                        />
                     </div>
                 </td>
                 <td>
@@ -136,25 +158,67 @@
     </div>
 </div>
 
-<div id="image-modal" class="modal">
-    <span class="close-btn">×</span>
+<div id="record-details-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn" onclick="hideModal()">×</span>
+        <h2 id="modal-title"></h2>
+        <p><strong>Дата приёма:</strong> <span id="modal-date"></span></p>
+        <p><strong>Телефон:</strong> <span id="modal-tel"></span></p>
+        <p><strong>Рекомендации:</strong> <span id="modal-recommends"></span></p>
+        <div id="modal-images-container"></div>
+    </div>
+</div>
+
+<div id="image-modal" class="image-modal">
+    <span class="close-btn" onclick="closeImage()">×</span>
     <img id="expanded-image" class="fullscreen-img" />
 </div>
 
 <script>
-    $(document).ready(function(){
-        $(".thumb").on("click", function(e){
-            e.preventDefault();
-            const imgSrc = $(this).attr("src"); // Получаем источник изображения
-            $("#expanded-image").attr("src", imgSrc); // Меняем изображение в модальном окне
-            $("#image-modal").addClass("active"); // Активируем модальное окно
-        });
+    function showModal(rowElement) {
+        var modal = document.getElementById("record-details-modal");
+        modal.classList.add("active");
 
-        // Закрываем модальное окно при клике на изображение или кнопку
-        $("#expanded-image, .close-btn").on("click", function(){
-            $("#image-modal").removeClass("active");
+        // Заполняем модальное окно данными из выбранной строки
+        var dateCell = rowElement.cells[0].innerText.trim();
+        var telCell = rowElement.cells[1].innerText.trim();
+        var recommendsCell = rowElement.cells[2].innerText.trim();
+
+        document.getElementById("modal-title").innerText = "Подробности записи";
+        document.getElementById("modal-date").innerText = dateCell;
+        document.getElementById("modal-tel").innerText = telCell;
+        document.getElementById("modal-recommends").innerText = recommendsCell;
+
+        // Очистим контейнер изображений
+        var imagesContainer = document.getElementById("modal-images-container");
+        while (imagesContainer.firstChild) {
+            imagesContainer.removeChild(imagesContainer.lastChild);
+        }
+
+        // Копируем фотографии в модальное окно
+        var photos = rowElement.querySelectorAll(".photos > img");
+        photos.forEach(function(img) {
+            let imgClone = img.cloneNode(true);
+            imgClone.style.maxWidth = "auto"; // Фото показываются полноразмерно
+            imgClone.style.maxHeight = "none";
+            imagesContainer.appendChild(imgClone);
         });
-    });
+    }
+
+    function hideModal() {
+        var modal = document.getElementById("record-details-modal");
+        modal.classList.remove("active");
+    }
+
+    function openImage(event) {
+        const imageUrl = event.target.src;
+        document.getElementById("expanded-image").src = imageUrl;
+        document.getElementById("image-modal").classList.add("active");
+    }
+
+    function closeImage() {
+        document.getElementById("image-modal").classList.remove("active");
+    }
 </script>
 
 </body>
