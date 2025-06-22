@@ -3,8 +3,6 @@ package org.cosmetology.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.cosmetology.model.Appointment;
 import org.cosmetology.repository.AppointmentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -49,22 +47,6 @@ public class AppointmentController {
     }
 
     /**
-     * отображение всех записей.
-     */
-    @GetMapping("/allRecords")
-    public String appointmentsList(Model model, RedirectAttributes redirectAttrs) {
-        log.info("получили все записи");
-        List<Appointment> appointments = repository.findAll(Sort.by(Sort.Direction.DESC, "appointmentDate"));
-        model.addAttribute("appointments", appointments);
-        model.addAttribute("searchPerformed", false); // Изначально поиск не производился
-        if (appointments.isEmpty()){
-            redirectAttrs.addFlashAttribute("message", "Список записей пуст !");
-            return REDIRECT;
-        }
-        return INDEX_HTML; // Используем тот же шаблон
-    }
-
-    /**
      * отображение записей по номеру телефона.
      *
      * @param phoneNumber  номер телефона
@@ -76,7 +58,7 @@ public class AppointmentController {
         model.addAttribute("appointments", foundAppointments);
         model.addAttribute("searchPerformed", true); // Установим признак, что поиск был произведен
         if (foundAppointments.isEmpty()){
-            redirectAttrs.addFlashAttribute("message", "Запись с таким номером телефона не найдена !");
+            redirectAttrs.addFlashAttribute("message", "Запись с таким номером телефона '" + phoneNumber + "' не найдена !");
             return REDIRECT;
         }
         return INDEX_HTML; // Используем тот же шаблон
@@ -216,4 +198,20 @@ public class AppointmentController {
         }
         return REDIRECT;
     }
+
+    //    /**
+//     * отображение всех записей.
+//     */
+//    @GetMapping("/allRecords")
+//    public String appointmentsList(Model model, RedirectAttributes redirectAttrs) {
+//        log.info("получили все записи");
+//        List<Appointment> appointments = repository.findAll(Sort.by(Sort.Direction.DESC, "appointmentDate"));
+//        model.addAttribute("appointments", appointments);
+//        model.addAttribute("searchPerformed", false); // Изначально поиск не производился
+//        if (appointments.isEmpty()){
+//            redirectAttrs.addFlashAttribute("message", "Список записей пуст !");
+//            return REDIRECT;
+//        }
+//        return INDEX_HTML; // Используем тот же шаблон
+//    }
 }
