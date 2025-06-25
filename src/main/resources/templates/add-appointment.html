@@ -25,11 +25,20 @@
                title="Номер телефона должен быть указан в формате 8XXXXXXXXXX"
                placeholder="8XXXXXXXXXX" />
 
+        Тип кожи:<br/>
+        <select name="skinType" id="skinType">
+            <option value="">Выберите тип кожи...</option>
+            <option value="Жирная">Жирная</option>
+            <option value="Сухая">Сухая</option>
+            <option value="Нормальная">Нормальная</option>
+            <option value="Комбинированная">Комбинированная</option>
+        </select><br/><br/>
+
         Дата визита (формат yyyy-MM-dd):<br/>
         <input type="date" id=appointmentDate name="appointmentDate" required /><br/><br/>
 
         Рекомендации:<br/>
-        <textarea id="recommend" name="recommend" rows="5" cols="50" required></textarea><br/><br/>
+        <textarea id="recommend" name="recommend" rows="5" cols="50"></textarea><br/><br/>
 
         Фото клиента:<br/>
         <input type="file" multiple id="clientPhotos" name="clientPhotos" accept="image/*"/><br/><br/>
@@ -42,6 +51,8 @@
 </div>
 
 <script>
+
+    const skinType = document.querySelector('input[name="skinType"]:checked') ? document.querySelector('input[name="skinType"]:checked').value : '';
     // Массив для хранения всех выбранных файлов
     let allSelectedFiles = [];
 
@@ -56,6 +67,18 @@
     document.getElementById('uploadForm').addEventListener('submit', function(event) {
         event.preventDefault(); // блокируем обычную отправку формы
 
+        const skinTypeValue = document.getElementById('skinType').value.trim();
+        const recommendationText = document.getElementById('recommend').value.trim();
+
+        if(skinTypeValue === '' && recommendationText === ''){
+            alert('Выберите тип кожи или заполните поле рекомендации !');
+            return;
+        }
+        if(skinTypeValue !== '' && recommendationText !== ''){
+            alert('Необходимо убрать галочку с поля \'Тип кожи\' или очистить поле \'Рекомендации\'');
+            return;
+        }
+
         const formData = new FormData();
 
         // Добавляем файлы в объект FormData ТОЛЬКО ЕСЛИ ЕСТЬ ФАЙЛЫ
@@ -69,6 +92,7 @@
         formData.append("telephone", document.getElementById('telephone').value);
         formData.append("appointmentDate", document.getElementById('appointmentDate').value);
         formData.append("recommend", document.getElementById('recommend').value);
+        formData.append("skinType", document.getElementById('skinType').value);
 
         // Отправляем данные формы
         fetch('/add', {method: 'POST', body: formData})

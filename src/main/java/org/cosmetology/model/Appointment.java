@@ -27,7 +27,7 @@ public class Appointment {
     @Column(name = "appointment_date", nullable = false)
     private LocalDate appointmentDate;
 
-    @Column(name = "recommend", nullable = false)
+    @Column(name = "recommend")
     private String recommend;
 
     // photos — это список фотографий в формате BASE64

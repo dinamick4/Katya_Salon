@@ -1,16 +1,32 @@
 CREATE TABLE IF NOT EXISTS appointment (
                                         id SERIAL PRIMARY KEY,                          -- Автоинкрементируемый первичный ключ
                                         telephone VARCHAR(255) NOT NULL,                -- Номер телефона клиента
-                                        recommend TEXT NOT NULL,                        -- Рекомендация косметолога
+                                        recommend TEXT                                  -- Рекомендация косметолога
                                         appointment_date TIMESTAMP NOT NULL,            -- Дата и время визита
-                                        photo_base64 TEXT                              -- Новое поле для хранения изображения в виде BASE64
+                                        photo_base64 TEXT                               -- Новое поле для хранения изображения в виде BASE64
     );
 
-CREATE TABLE appointment_photos (
+CREATE TABLE IF NOT EXISTS appointment_photos (
                                     id SERIAL PRIMARY KEY,
                                     appointment_id BIGINT REFERENCES appointment(id),
                                     photo_base64 TEXT
 );
+
+CREATE TABLE IF NOT EXISTS skin (
+                                skin_type VARCHAR(50) NOT NULL,
+                                recommend TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS skin (
+    skin_type VARCHAR(50) NOT NULL UNIQUE ,
+    recommend TEXT NOT NULL
+    );
+
+insert into skin values ('Жирная', 'Жирную кожу не мажем кремом !');
+insert into skin values ('Сухая', 'Сухую кожу мажем кремом !');
+insert into skin values ('Нормальная', 'Нормальную кожу необходимо умывать каждые 2 часа !');
+insert into skin values ('Комбинированная', 'Комбирированную кожу обрабатываем перекисью !');
+
 
 
 CREATE OR REPLACE FUNCTION clean_old_record_if_needed()

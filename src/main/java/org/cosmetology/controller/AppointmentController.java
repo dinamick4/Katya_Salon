@@ -2,7 +2,9 @@ package org.cosmetology.controller;
 
 import lombok.extern.slf4j.Slf4j;
 import org.cosmetology.model.Appointment;
+import org.cosmetology.model.Skin;
 import org.cosmetology.repository.AppointmentRepository;
+import org.cosmetology.repository.SkinRepository;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,10 +32,12 @@ public class AppointmentController {
     private final String INDEX_HTML = "index";
     private final String REDIRECT = "redirect:/";
 
-    private final AppointmentRepository repository;
+    private final AppointmentRepository appointmentRepository;
+    private final SkinRepository skinRepository;
 
-    public AppointmentController(AppointmentRepository repository) {
-        this.repository = repository;
+    public AppointmentController(AppointmentRepository appointmentRepository, SkinRepository skinRepository) {
+        this.appointmentRepository = appointmentRepository;
+        this.skinRepository = skinRepository;
     }
 
     /**
@@ -54,7 +58,7 @@ public class AppointmentController {
     @GetMapping("/getRecord")
     public String searchAppointmentsByPhone(@RequestParam(name = "telephone") String phoneNumber, Model model, RedirectAttributes redirectAttrs) {
         log.info("Ищем записи по телефону: {}", phoneNumber);
-        List<Appointment> foundAppointments = repository.findByTelephone(phoneNumber);
+        List<Appointment> foundAppointments = appointmentRepository.findByTelephone(phoneNumber);
         model.addAttribute("appointments", foundAppointments);
         model.addAttribute("searchPerformed", true); // Установим признак, что поиск был произведен
         if (foundAppointments.isEmpty()){
@@ -72,7 +76,7 @@ public class AppointmentController {
     @PostMapping("/delete/{id}")
     public String deleteAppointment(@PathVariable Long id, RedirectAttributes redirectAttrs) {
         log.info("Удаление записи с id : {}", id);
-        repository.deleteById(id);
+        appointmentRepository.deleteById(id);
         redirectAttrs.addFlashAttribute("message", "Запись успешно удалена!");
         return REDIRECT;
     }
@@ -84,7 +88,7 @@ public class AppointmentController {
      */
     @GetMapping("/edit/{id}")
     public String editAppointmentForm(@PathVariable Long id, Model model) {
-        Optional<Appointment> appointmentOptional = repository.findById(id);
+        Optional<Appointment> appointmentOptional = appointmentRepository.findById(id);
         if (appointmentOptional.isPresent()) {
             model.addAttribute("appointment", appointmentOptional.get());
             return "edit-appointment";
@@ -109,12 +113,14 @@ public class AppointmentController {
             @RequestParam String telephone,
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate appointmentDate,
             @RequestParam String recommend,
+            @RequestParam String skinType,
             @RequestPart(value = "clientPhotos", required=false) MultipartFile[] clientPhotos // Массив файлов
     ) throws IOException {
+        List<Skin> skinList = skinRepository.findBySkinType(skinType);
         Appointment appointment = new Appointment();
         appointment.setTelephone(telephone);
         appointment.setAppointmentDate(appointmentDate);
-        appointment.setRecommend(recommend);
+        appointment.setRecommend (skinList.isEmpty() ? recommend : skinList.get(0).getRecommend());
         if (clientPhotos != null && clientPhotos.length > 0) {
             log.info("Количество загруженных фотографий: {}", clientPhotos.length);
             List<String> photosBase64 = new ArrayList<>();
@@ -131,7 +137,7 @@ public class AppointmentController {
         } else {
             log.warn("Ни одна фотография не была загружена.");
         }
-        repository.save(appointment);
+        appointmentRepository.save(appointment);
         Map<String, Object> result = new HashMap<>();
         result.put("message", "Запись успешно добавлена!");
         return ResponseEntity.ok(result);
@@ -152,7 +158,7 @@ public class AppointmentController {
             @RequestPart(value = "clientPhotos", required=false) MultipartFile[] clientPhotos, // Массив файлов
             RedirectAttributes redirectAttrs
     ) {
-        Optional<Appointment> existingAppointment = repository.findById(id);
+        Optional<Appointment> existingAppointment = appointmentRepository.findById(id);
         if (existingAppointment.isPresent()) {
             Appointment updatedAppointment = existingAppointment.get();
             updatedAppointment.setTelephone(telephone);
@@ -192,7 +198,7 @@ public class AppointmentController {
                 updatedAppointment.getPhotos().addAll(newPhotos);
             }
 
-            repository.save(updatedAppointment);
+            appointmentRepository.save(updatedAppointment);
             redirectAttrs.addFlashAttribute("message", "Запись успешно обновлена!");
             log.info("Запись с ID {} успешно обновлена.", id);
         }
